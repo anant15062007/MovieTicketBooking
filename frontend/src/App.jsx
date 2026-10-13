@@ -8,7 +8,7 @@ export default function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [customerForm, setCustomerForm] = useState({ first_name: '', last_name: '', email: '', date_of_birth: '', phone_number: '' });
+  const [customerForm, setCustomerForm] = useState({ first_name: '', middle_name: '', last_name: '', email: '', date_of_birth: '', phone_number: '' });
   const [theatreForm, setTheatreForm] = useState({ theatre_name: '', location: '', total_screens: '' });
   const [movieForm, setMovieForm] = useState({ title: '', language: '', genre: '', duration_minutes: '' });
   const [showForm, setShowForm] = useState({ theatre_id: '', movie_id: '', show_date: '', show_time: '', language: '' });
@@ -43,7 +43,7 @@ export default function App() {
     e.preventDefault();
     try {
       await axios.post(`${NODE_API}/customers`, customerForm);
-      setCustomerForm({ first_name: '', last_name: '', email: '', date_of_birth: '', phone_number: '' });
+      setCustomerForm({ first_name: '', middle_name: '', last_name: '', email: '', date_of_birth: '', phone_number: '' });
       fetchData();
     } catch (err) {
       alert('Error: ' + err.message);
@@ -110,7 +110,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* Insert Record Section - Seamless Full Width */}
+      {/* Insert Record Section */}
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h3 style={{ marginBottom: '15px', textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px', color: '#888888' }}>
           Insert into `{activeTab}`
@@ -119,6 +119,7 @@ export default function App() {
         {activeTab === 'customers' && (
           <form onSubmit={handleAddCustomer} style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <input placeholder="First Name" value={customerForm.first_name} onChange={e => setCustomerForm({...customerForm, first_name: e.target.value})} style={inputStyle} required />
+            <input placeholder="Middle Name" value={customerForm.middle_name} onChange={e => setCustomerForm({...customerForm, middle_name: e.target.value})} style={inputStyle} />
             <input placeholder="Last Name" value={customerForm.last_name} onChange={e => setCustomerForm({...customerForm, last_name: e.target.value})} style={inputStyle} required />
             <input placeholder="Email" type="email" value={customerForm.email} onChange={e => setCustomerForm({...customerForm, email: e.target.value})} style={inputStyle} required />
             <input placeholder="Phone" value={customerForm.phone_number} onChange={e => setCustomerForm({...customerForm, phone_number: e.target.value})} style={inputStyle} />

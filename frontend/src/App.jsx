@@ -83,6 +83,24 @@ export default function App() {
     }
   };
 
+  // Helper to format dates as DD/MM/YYYY and clean values
+  const formatValue = (key, val) => {
+    if (val === null || val === undefined) return 'NULL';
+    if (key.toLowerCase().includes('date') && typeof val === 'string') {
+      const datePart = val.split('T')[0];
+      const parts = datePart.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
+      }
+    }
+    return val.toString();
+  };
+
+  // Filter out PK and FK columns ending with '_id'
+  const visibleKeys = data.length > 0 
+    ? Object.keys(data[0]).filter(key => !key.toLowerCase().endsWith('_id')) 
+    : [];
+
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '40px', width: '100vw', minHeight: '100vh', background: '#121212', color: '#ffffff', boxSizing: 'border-box', margin: 0, overflowX: 'hidden' }}>
       
@@ -174,7 +192,7 @@ export default function App() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#121212', border: '1px solid #222222' }}>
             <thead>
               <tr style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a' }}>
-                {data.length > 0 && Object.keys(data[0]).map((key) => (
+                {visibleKeys.map((key) => (
                   <th key={key} style={{ padding: '14px 16px', color: '#cccccc', borderRight: '1px solid #2a2a2a', fontSize: '13px', fontWeight: '600' }}>{key}</th>
                 ))}
                 <th style={{ padding: '14px 16px', color: '#cccccc', fontSize: '13px', fontWeight: '600' }}>Actions</th>
@@ -187,12 +205,12 @@ export default function App() {
                 </tr>
               ) : (
                 data.map((row, idx) => {
-                  const rowId = row.customer_id || row.theatre_id || row.movie_id || row.show_id || row.booking_id || row.ticket_id;
+                  const rowId = row.customer_id || row.theatre_id || row.movie_id || row.show_id || row.booking_id || row.ticket_id || row.phone_id;
                   return (
                     <tr key={idx} style={{ borderBottom: '1px solid #1a1a1a' }}>
-                      {Object.values(row).map((val, i) => (
+                      {visibleKeys.map((key, i) => (
                         <td key={i} style={{ padding: '14px 16px', color: '#aaaaaa', borderRight: '1px solid #1a1a1a', fontSize: '13px' }}>
-                          {val !== null ? val.toString() : 'NULL'}
+                          {formatValue(key, row[key])}
                         </td>
                       ))}
                       <td style={{ padding: '14px 16px' }}>

@@ -54,4 +54,17 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  const { title, language, genre, duration_minutes } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE movies SET title=$1, language=$2, genre=$3, duration_minutes=$4 WHERE movie_id=$5 RETURNING *`,
+      [title, language, genre, duration_minutes, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -57,3 +57,17 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+// PUT update customer
+router.put('/:id', async (req, res) => {
+  const { first_name, middle_name, last_name, email, password_hash, date_of_birth } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE customers SET first_name=$1, middle_name=$2, last_name=$3, email=$4, password_hash=$5, date_of_birth=$6 WHERE customer_id=$7 RETURNING *`,
+      [first_name, middle_name, last_name, email, password_hash, date_of_birth, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

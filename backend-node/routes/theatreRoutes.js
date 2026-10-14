@@ -36,4 +36,17 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  const { theatre_name, location, total_screens } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE theatres SET theatre_name=$1, location=$2, total_screens=$3 WHERE theatre_id=$4 RETURNING *`,
+      [theatre_name, location, total_screens, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

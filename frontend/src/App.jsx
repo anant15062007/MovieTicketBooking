@@ -8,6 +8,11 @@ export default function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Edit & Hover state
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [hoveredCell, setHoveredCell] = useState(null);
+
   const [customerForm, setCustomerForm] = useState({ first_name: '', middle_name: '', last_name: '', email: '', date_of_birth: '', phone_number: '' });
   const [theatreForm, setTheatreForm] = useState({ theatre_name: '', location: '', total_screens: '' });
   const [movieForm, setMovieForm] = useState({ title: '', language: '', genre: '', duration_minutes: '' });
@@ -15,6 +20,8 @@ export default function App() {
 
   const fetchData = async () => {
     setLoading(true);
+    setEditingId(null);
+    setHoveredCell(null);
     try {
       const res = await axios.get(`${NODE_API}/${activeTab}`);
       setData(res.data);
@@ -36,6 +43,21 @@ export default function App() {
       fetchData();
     } catch (err) {
       alert('Delete failed: ' + err.message);
+    }
+  };
+
+  const handleEditClick = (row, rowId) => {
+    setEditingId(rowId);
+    setEditForm({ ...row });
+  };
+
+  const handleSaveEdit = async (rowId) => {
+    try {
+      await axios.put(`${NODE_API}/${activeTab}/${rowId}`, editForm);
+      setEditingId(null);
+      fetchData();
+    } catch (err) {
+      alert('Update failed: ' + err.message);
     }
   };
 
@@ -206,20 +228,72 @@ export default function App() {
               ) : (
                 data.map((row, idx) => {
                   const rowId = row.customer_id || row.theatre_id || row.movie_id || row.show_id || row.booking_id || row.ticket_id || row.phone_id;
+                  const isEditing = editingId === rowId;
+
                   return (
                     <tr key={idx} style={{ borderBottom: '1px solid #1a1a1a' }}>
                       {visibleKeys.map((key, i) => (
-                        <td key={i} style={{ padding: '14px 16px', color: '#aaaaaa', borderRight: '1px solid #1a1a1a', fontSize: '13px' }}>
-                          {formatValue(key, row[key])}
+                        <td 
+                          key={i} 
+                          onMouseEnter={() => !isEditing && setHoveredCell({ rowIndex: idx, key })}
+                          onMouseLeave={() => setHoveredCell(null)}
+                          style={{ padding: '14px 16px', color: '#aaaaaa', borderRight: '1px solid #1a1a1a', fontSize: '13px' }}
+                        >
+                          {isEditing ? (
+                            <input
+                              value={editForm[key] !== null ? editForm[key] : ''}
+                              onChange={e => setEditForm({ ...editForm, [key]: e.target.value })}
+                              style={{ ...inputStyle, padding: '4px 8px', width: '100%' }}
+                            />
+                          ) : (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>{formatValue(key, row[key])}</span>
+                              {hoveredCell?.rowIndex === idx && hoveredCell?.key === key && (
+                                <button
+                                  onClick={() => handleEditClick(row, rowId)}
+                                  title="Edit Record"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#888888',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    marginLeft: '10px',
+                                    padding: '0'
+                                  }}
+                                >
+                                  ✎
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                       ))}
                       <td style={{ padding: '14px 16px' }}>
-                        <button 
-                          onClick={() => handleDelete(rowId)} 
-                          style={{ background: 'transparent', color: '#888888', border: '1px solid #333333', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          Delete
-                        </button>
+                        {isEditing ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              onClick={() => handleSaveEdit(rowId)}
+                              style={{ background: 'transparent', color: '#ffffff', border: '1px solid #555555', padding: '5px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                              Save
+                            </button>
+                            <button 
+                              onClick={() => setEditingId(null)}
+                              style={{ background: 'transparent', color: '#888888', border: '1px solid #333333', padding: '5px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => handleDelete(rowId)} 
+                            title="Delete Record"
+                            style={{ background: 'transparent', color: '#888888', border: '1px solid #333333', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

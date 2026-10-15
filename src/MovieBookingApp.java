@@ -250,7 +250,6 @@ public class MovieBookingApp extends JFrame {
                     ps.setInt(7, id);
                     ps.executeUpdate();
 
-                    // Update phone number
                     PreparedStatement psDelPhone = conn.prepareStatement("DELETE FROM customer_phones WHERE customer_id = ?");
                     psDelPhone.setInt(1, id);
                     psDelPhone.executeUpdate();
@@ -500,6 +499,8 @@ public class MovieBookingApp extends JFrame {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         actionPanel.setBackground(Color.WHITE);
         JButton deleteBtn = new JButton("Delete Selected");
+        JButton editBtn = new JButton("Edit Selected");
+        actionPanel.add(editBtn);
         actionPanel.add(deleteBtn);
         mainPanel.add(actionPanel, BorderLayout.SOUTH);
 
@@ -531,6 +532,58 @@ public class MovieBookingApp extends JFrame {
                 tabbedPane.setComponentAt(3, createShowsPanel());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Delete Error: " + ex.getMessage());
+            }
+        });
+
+        editBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row == -1) { JOptionPane.showMessageDialog(this, "Please select a show to edit."); return; }
+            int id = (int) table.getModel().getValueAt(row, 0);
+
+            // Fetch current foreign key IDs for this show
+            String theatreIdVal = "";
+            String movieIdVal = "";
+            try {
+                PreparedStatement ps = conn.prepareStatement("SELECT theatre_id, movie_id FROM shows WHERE show_id = ?");
+                ps.setInt(1, id);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    theatreIdVal = String.valueOf(rs.getInt("theatre_id"));
+                    movieIdVal = String.valueOf(rs.getInt("movie_id"));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            JTextField f1 = new JTextField(theatreIdVal, 5);
+            JTextField f2 = new JTextField(movieIdVal, 5);
+            JTextField f3 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 1)), 8);
+            JTextField f4 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 2)), 8);
+            JTextField f5 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 3)), 8);
+
+            JPanel editPanel = new JPanel(new GridLayout(5, 2, 5, 5));
+            editPanel.add(new JLabel("Theatre ID:")); editPanel.add(f1);
+            editPanel.add(new JLabel("Movie ID:")); editPanel.add(f2);
+            editPanel.add(new JLabel("Date (YYYY-MM-DD):")); editPanel.add(f3);
+            editPanel.add(new JLabel("Time (HH:MM:SS):")); editPanel.add(f4);
+            editPanel.add(new JLabel("Language:")); editPanel.add(f5);
+
+            int result = JOptionPane.showConfirmDialog(null, editPanel, "Edit Show", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    PreparedStatement ps = conn.prepareStatement("UPDATE shows SET theatre_id=?, movie_id=?, show_date=?::date, show_time=?::time, language=? WHERE show_id=?");
+                    ps.setInt(1, Integer.parseInt(f1.getText()));
+                    ps.setInt(2, Integer.parseInt(f2.getText()));
+                    ps.setString(3, f3.getText());
+                    ps.setString(4, f4.getText());
+                    ps.setString(5, f5.getText());
+                    ps.setInt(6, id);
+                    ps.executeUpdate();
+                    JOptionPane.showMessageDialog(this, "Show Updated!");
+                    tabbedPane.setComponentAt(3, createShowsPanel());
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Update Error: " + ex.getMessage());
+                }
             }
         });
 

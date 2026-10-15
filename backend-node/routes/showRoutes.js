@@ -4,10 +4,25 @@ const pool = require('../config/db');
 
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM shows ORDER BY show_id ASC');
+    const query = `
+      SELECT 
+        s.show_id, 
+        s.theatre_id, 
+        s.movie_id, 
+        s.show_date, 
+        s.show_time, 
+        s.language,
+        m.title AS movie_title,
+        t.theatre_name,
+        t.location
+      FROM shows s
+      JOIN movies m ON s.movie_id = m.movie_id
+      JOIN theatres t ON s.theatre_id = t.theatre_id
+      ORDER BY s.show_id ASC
+    `;
+    const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error('Shows GET Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -21,17 +36,6 @@ router.post('/', async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Shows POST Error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    await pool.query('DELETE FROM shows WHERE show_id=$1', [req.params.id]);
-    res.json({ message: 'Show deleted' });
-  } catch (err) {
-    console.error('Shows DELETE Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -44,6 +48,15 @@ router.put('/:id', async (req, res) => {
       [theatre_id, movie_id, show_date, show_time, language, req.params.id]
     );
     res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM shows WHERE show_id=$1', [req.params.id]);
+    res.json({ message: 'Show deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

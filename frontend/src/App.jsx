@@ -8,6 +8,10 @@ export default function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Dropdown options lists for bookings
+  const [customersList, setCustomersList] = useState([]);
+  const [showsList, setShowsList] = useState([]);
+
   // Edit & Hover state
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -17,6 +21,7 @@ export default function App() {
   const [theatreForm, setTheatreForm] = useState({ theatre_name: '', location: '', total_screens: '' });
   const [movieForm, setMovieForm] = useState({ title: '', language: '', genre: '', duration_minutes: '' });
   const [showForm, setShowForm] = useState({ theatre_id: '', movie_id: '', show_date: '', show_time: '', language: '' });
+  const [bookingForm, setBookingForm] = useState({ customer_id: '', show_id: '', seat_number: '', hall_number: '' });
 
   const fetchData = async () => {
     setLoading(true);
@@ -25,6 +30,12 @@ export default function App() {
     try {
       const res = await axios.get(`${NODE_API}/${activeTab}`);
       setData(res.data);
+
+      // Fetch helper lists for dropdowns when booking
+      const custRes = await axios.get(`${NODE_API}/customers`);
+      setCustomersList(custRes.data);
+      const showRes = await axios.get(`${NODE_API}/shows`);
+      setShowsList(showRes.data);
     } catch (err) {
       alert('Error fetching data: ' + err.message);
     } finally {
@@ -39,7 +50,8 @@ export default function App() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {
-      await axios.delete(`${NODE_API}/${activeTab}/${id}`);
+      const endpoint = activeTab === 'bookings' ? 'bookings' : activeTab;
+      await axios.delete(`${NODE_API}/${endpoint}/${id}`);
       fetchData();
     } catch (err) {
       alert('Delete failed: ' + err.message);
@@ -53,7 +65,8 @@ export default function App() {
 
   const handleSaveEdit = async (rowId) => {
     try {
-      await axios.put(`${NODE_API}/${activeTab}/${rowId}`, editForm);
+      const endpoint = activeTab === 'bookings' ? 'bookings' : activeTab;
+      await axios.put(`${NODE_API}/${endpoint}/${rowId}`, editForm);
       setEditingId(null);
       fetchData();
     } catch (err) {
@@ -105,7 +118,18 @@ export default function App() {
     }
   };
 
-  // Helper to format dates as DD/MM/YYYY and clean values
+  const handleAddBooking = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${NODE_API}/bookings`, bookingForm);
+      setBookingForm({ customer_id: '', show_id: '', seat_number: '', hall_number: '' });
+      fetchData();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  // Helper to format dates as DD/MM/YYYY and clean times
   const formatValue = (key, val) => {
     if (val === null || val === undefined) return 'NULL';
     if (key.toLowerCase().includes('date') && typeof val === 'string') {
@@ -115,12 +139,15 @@ export default function App() {
         return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
       }
     }
+    if (key.toLowerCase().includes('time') && typeof val === 'string') {
+      return val.split('.')[0]; // Removes milliseconds
+    }
     return val.toString();
   };
 
-  // Filter out PK and FK columns ending with '_id'
+  // Filter out PK and FK columns ending with '_id' and any price column
   const visibleKeys = data.length > 0 
-    ? Object.keys(data[0]).filter(key => !key.toLowerCase().endsWith('_id')) 
+    ? Object.keys(data[0]).filter(key => !key.toLowerCase().endsWith('_id') && key.toLowerCase() !== 'price') 
     : [];
 
   return (
@@ -153,7 +180,7 @@ export default function App() {
       {/* Insert Record Section */}
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h3 style={{ marginBottom: '15px', textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px', color: '#888888' }}>
-          Insert into `{activeTab}`
+          Insert into {activeTab}
         </h3>
         
         {activeTab === 'customers' && (
@@ -198,13 +225,49 @@ export default function App() {
           </form>
         )}
 
-        {activeTab === 'bookings' && <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>Managed via bookings transactions</p>}
-        {activeTab === 'tickets' && <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>Managed via show seat selection</p>}
+        {activeTab === 'bookings' && (
+          <form onSubmit={handleAddBooking} style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <select 
+              value={bookingForm.customer_id} 
+              onChange={e => setBookingForm({...bookingForm, customer_id: e.target.value})} 
+              style={inputStyle} 
+              required
+            >
+              <option value="">Select Customer</option>
+              {customersList.map(c => (
+                <option key={c.customer_id} value={c.customer_id}>
+                  {c.first_name} {c.last_name} ({c.email})
+                </option>
+              ))}
+            </select>
+
+            <select 
+              value={bookingForm.show_id} 
+              onChange={e => setBookingForm({...bookingForm, show_id: e.target.value})} 
+              style={inputStyle} 
+              required
+            >
+              <option value="">Select Movie & Show</option>
+              {showsList.map(s => (
+                <option key={s.show_id} value={s.show_id}>
+                  {s.movie_title} @ {s.theatre_name} ({s.show_date ? s.show_date.split('T')[0] : ''} {s.show_time ? s.show_time.split('.')[0] : ''})
+                </option>
+              ))}
+            </select>
+
+            <input placeholder="Seat Number (e.g. A12)" value={bookingForm.seat_number} onChange={e => setBookingForm({...bookingForm, seat_number: e.target.value})} style={inputStyle} required />
+            <input placeholder="Hall Number" type="number" value={bookingForm.hall_number} onChange={e => setBookingForm({...bookingForm, hall_number: e.target.value})} style={inputStyle} required />
+            
+            <button type="submit" style={buttonStyle}>Book Ticket</button>
+          </form>
+        )}
+
+        {activeTab === 'tickets' && <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>Managed via Bookings tab</p>}
       </div>
 
       {/* Table Data View */}
       <h3 style={{ textAlign: 'center', textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px', color: '#888888', marginBottom: '15px' }}>
-        Table: `{activeTab}`
+        Table: {activeTab}
       </h3>
       
       {loading ? (

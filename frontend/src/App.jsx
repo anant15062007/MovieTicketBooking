@@ -337,7 +337,7 @@ export default function App() {
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button 
                               onClick={() => handleSaveEdit(rowId)}
-                              style={{ background: 'transparent', color: '#ffffff', border: '1px solid #555555', padding: '5px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                              style={{ background: 'transparent', color: '#1ebe1e', border: '1px solid #555555', padding: '5px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
                             >
                               Save
                             </button>
@@ -352,7 +352,7 @@ export default function App() {
                           <button 
                             onClick={() => handleDelete(rowId)} 
                             title="Delete Record"
-                            style={{ background: 'transparent', color: '#888888', border: '1px solid #333333', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                            style={{ background: 'transparent', color: '#a10808', border: '1px solid #333333', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
                           >
                             Delete
                           </button>

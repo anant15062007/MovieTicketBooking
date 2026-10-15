@@ -77,7 +77,7 @@ public class MovieBookingApp extends JFrame {
             }
 
             model.setColumnIdentifiers(columns);
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
             while (rs.next()) {
                 Vector<Object> row = new Vector<>();
@@ -219,30 +219,55 @@ public class MovieBookingApp extends JFrame {
             if (row == -1) { JOptionPane.showMessageDialog(this, "Please select a customer row to edit."); return; }
             int id = (int) table.getModel().getValueAt(row, 0);
 
-            JTextField f1 = new JTextField((String)table.getModel().getValueAt(row, 1), 10);
-            JTextField f2 = new JTextField((String)table.getModel().getValueAt(row, 2), 10);
-            JTextField f3 = new JTextField((String)table.getModel().getValueAt(row, 3), 10);
-            JTextField f4 = new JTextField((String)table.getModel().getValueAt(row, 4), 10);
+            JTextField f1 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 1)), 10);
+            JTextField f2 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 2)), 10);
+            JTextField f3 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 3)), 10);
+            JTextField f4 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 4)), 10);
+            JTextField f5 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 5)), 10);
+            JTextField f6 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 6)), 10);
+            JTextField f7 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 7)), 10);
 
-            JPanel editPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+            JPanel editPanel = new JPanel(new GridLayout(7, 2, 5, 5));
             editPanel.add(new JLabel("First Name:")); editPanel.add(f1);
             editPanel.add(new JLabel("Middle Name:")); editPanel.add(f2);
             editPanel.add(new JLabel("Last Name:")); editPanel.add(f3);
             editPanel.add(new JLabel("Email:")); editPanel.add(f4);
+            editPanel.add(new JLabel("Password Hash:")); editPanel.add(f5);
+            editPanel.add(new JLabel("DOB (YYYY-MM-DD):")); editPanel.add(f6);
+            editPanel.add(new JLabel("Phone Number:")); editPanel.add(f7);
 
             int result = JOptionPane.showConfirmDialog(null, editPanel, "Edit Customer", JOptionPane.OK_CANCEL_OPTION);
             if (result == JOptionPane.OK_OPTION) {
                 try {
-                    PreparedStatement ps = conn.prepareStatement("UPDATE customers SET first_name=?, middle_name=?, last_name=?, email=? WHERE customer_id=?");
+                    conn.setAutoCommit(false);
+                    PreparedStatement ps = conn.prepareStatement("UPDATE customers SET first_name=?, middle_name=?, last_name=?, email=?, password_hash=?, date_of_birth=?::date WHERE customer_id=?");
                     ps.setString(1, f1.getText());
                     ps.setString(2, f2.getText());
                     ps.setString(3, f3.getText());
                     ps.setString(4, f4.getText());
-                    ps.setInt(5, id);
+                    ps.setString(5, f5.getText());
+                    ps.setString(6, f6.getText());
+                    ps.setInt(7, id);
                     ps.executeUpdate();
+
+                    // Update phone number
+                    PreparedStatement psDelPhone = conn.prepareStatement("DELETE FROM customer_phones WHERE customer_id = ?");
+                    psDelPhone.setInt(1, id);
+                    psDelPhone.executeUpdate();
+
+                    if (!f7.getText().trim().isEmpty()) {
+                        PreparedStatement psPhone = conn.prepareStatement("INSERT INTO customer_phones (customer_id, phone_number) VALUES (?, ?)");
+                        psPhone.setInt(1, id);
+                        psPhone.setString(2, f7.getText().trim());
+                        psPhone.executeUpdate();
+                    }
+
+                    conn.commit();
+                    conn.setAutoCommit(true);
                     JOptionPane.showMessageDialog(this, "Customer Updated!");
                     tabbedPane.setComponentAt(0, createCustomersPanel());
                 } catch (Exception ex) {
+                    try { conn.rollback(); } catch (SQLException rollbackEx) {}
                     JOptionPane.showMessageDialog(this, "Update Error: " + ex.getMessage());
                 }
             }
@@ -315,9 +340,9 @@ public class MovieBookingApp extends JFrame {
             if (row == -1) { JOptionPane.showMessageDialog(this, "Please select a theatre."); return; }
             int id = (int) table.getModel().getValueAt(row, 0);
 
-            JTextField f1 = new JTextField((String)table.getModel().getValueAt(row, 1), 12);
-            JTextField f2 = new JTextField((String)table.getModel().getValueAt(row, 2), 12);
-            JTextField f3 = new JTextField(table.getModel().getValueAt(row, 3).toString(), 5);
+            JTextField f1 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 1)), 12);
+            JTextField f2 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 2)), 12);
+            JTextField f3 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 3)), 5);
 
             JPanel editPanel = new JPanel(new GridLayout(3, 2, 5, 5));
             editPanel.add(new JLabel("Theatre Name:")); editPanel.add(f1);
@@ -411,10 +436,10 @@ public class MovieBookingApp extends JFrame {
             if (row == -1) { JOptionPane.showMessageDialog(this, "Please select a movie."); return; }
             int id = (int) table.getModel().getValueAt(row, 0);
 
-            JTextField f1 = new JTextField((String)table.getModel().getValueAt(row, 1), 12);
-            JTextField f2 = new JTextField((String)table.getModel().getValueAt(row, 2), 8);
-            JTextField f3 = new JTextField((String)table.getModel().getValueAt(row, 3), 8);
-            JTextField f4 = new JTextField(table.getModel().getValueAt(row, 4).toString(), 5);
+            JTextField f1 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 1)), 12);
+            JTextField f2 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 2)), 8);
+            JTextField f3 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 3)), 8);
+            JTextField f4 = new JTextField(String.valueOf(table.getModel().getValueAt(row, 4)), 5);
 
             JPanel editPanel = new JPanel(new GridLayout(4, 2, 5, 5));
             editPanel.add(new JLabel("Title:")); editPanel.add(f1);
@@ -512,7 +537,7 @@ public class MovieBookingApp extends JFrame {
         return mainPanel;
     }
 
-    // 5. BOOKINGS PANEL (Aggregated by booking to show correct number of seats)
+    // 5. BOOKINGS PANEL
     private JPanel createBookingsPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
@@ -522,7 +547,7 @@ public class MovieBookingApp extends JFrame {
 
         JComboBox<String> customerCombo = new JComboBox<>();
         JComboBox<String> showCombo = new JComboBox<>();
-        JTextField seatField = new JTextField(8); // e.g. A12, A13
+        JTextField seatField = new JTextField(8);
         JTextField hallField = new JTextField(5);
         JButton bookBtn = new JButton("Book Ticket");
 
@@ -549,7 +574,6 @@ public class MovieBookingApp extends JFrame {
 
         mainPanel.add(formPanel, BorderLayout.NORTH);
 
-        // SQL Query grouped by booking to compute number of seats and list seat numbers cleanly
         String query = "SELECT b.booking_id, b.booking_date, b.booking_time, b.total_amount, c.first_name, c.last_name, " +
                        "COUNT(t.ticket_id) AS number_of_seats, STRING_AGG(t.seat_number, ', ') AS seat_numbers, MAX(t.hall_number) AS hall_number " +
                        "FROM bookings b " +
